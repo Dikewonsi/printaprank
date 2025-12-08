@@ -31,6 +31,20 @@ class UserRepository
         return $row ? new User($row) : null;
     }
 
+    public function updateMembership(int $userId, int $membershipId): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET membership_id = :membership_id 
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            'membership_id' => $membershipId,
+            'id' => $userId,
+        ]);
+    }
+
+
 
     public function create(User $user): int
     {
