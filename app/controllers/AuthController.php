@@ -35,6 +35,7 @@
                 'name'     => $name,
                 'email'    => $email,
                 'password' => password_hash($pass, PASSWORD_DEFAULT),
+                'membership_id' => null,
                 'role'     => 'user',
             ]);
 

@@ -8,6 +8,7 @@ use App\core\Env;
 use App\core\Router;
 use App\controllers\AuthController;
 use App\controllers\CertificateController;
+use App\controllers\DashboardController;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -28,6 +29,7 @@ $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/register', [AuthController::class, 'showRegister']);
 $router->post('/register', [AuthController::class, 'register']);
+$router->get('/dashboard', [DashboardController::class, 'index']);
 
 // Minimal API test endpoint (for React editor later)
 $router->get('/api/ping', function () {

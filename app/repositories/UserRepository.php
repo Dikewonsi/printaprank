@@ -23,6 +23,15 @@ class UserRepository
         return $row ? new User($row) : null;
     }
 
+    public function findById(int $id): ?User
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ? new User($row) : null;
+    }
+
+
     public function create(User $user): int
     {
         $stmt = $this->db->prepare("
