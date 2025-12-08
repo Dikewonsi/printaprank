@@ -1,5 +1,9 @@
 <?php
 // public/index.php
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 use App\core\Env;
 use App\core\Router;
 use App\controllers\AuthController;
@@ -10,9 +14,9 @@ require __DIR__ . '/../vendor/autoload.php';
 // Load environment
 Env::load(__DIR__ . '/../.env.php');
 
-// Test DB connection
-$pdo = \App\core\Database::connection();
-echo "DB OK"; // uncomment to see
+// // Test DB connection
+// $pdo = \App\core\Database::connection();
+// echo "DB OK"; // uncomment to see
 
 
 // Simple router
