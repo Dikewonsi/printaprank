@@ -1,20 +1,26 @@
 <?php
+    // app/models/Certificate.php
     namespace App\models;
+
+    use App\core\Database; // assuming you already have a Database class for PDO connection
 
     class Certificate
     {
-        public int $id;
-        public string $title;
-        public string $description;
-        public float $price;
-        public string $image;
-
-        public function __construct(array $data)
+        // Fetch all certificates
+        public static function all(): array
         {
-            $this->id          = (int)$data['id'];
-            $this->title       = $data['title'];
-            $this->description = $data['description'];
-            $this->price       = (float)$data['price'];
-            $this->image       = $data['image'];
+            $pdo = Database::connection();
+            $stmt = $pdo->query("SELECT * FROM certificates");
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
+        // Fetch a single certificate by ID
+        public static function find(int $id): ?array
+        {
+            $pdo = Database::connection();
+            $stmt = $pdo->prepare("SELECT * FROM certificates WHERE id = ?");
+            $stmt->execute([$id]);
+            $certificate = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $certificate ?: null;
         }
     }

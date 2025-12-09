@@ -12,7 +12,7 @@
         public function __construct()
         {
             $this->users = new UserRepository();
-            session_start();
+            // session_start();
         }
 
         public function showRegister()
@@ -42,7 +42,7 @@
             $id = $this->users->create($user);
             $_SESSION['user_id'] = $id;
 
-            header("Location: /dashboard");
+            header("Location: /");
         }
 
         public function showLogin()
@@ -62,7 +62,7 @@
             }
 
             $_SESSION['user_id'] = $user->id;
-            header("Location: /dashboard");
+            header("Location: /");
         }
 
         public function logout()

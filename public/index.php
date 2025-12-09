@@ -20,16 +20,12 @@ require __DIR__ . '/../vendor/autoload.php';
 // Load environment
 Env::load(__DIR__ . '/../.env.php');
 
-// // Test DB connection
-// $pdo = \App\core\Database::connection();
-// echo "DB OK"; // uncomment to see
-
 
 // Simple router
 $router = new Router();
 
 // Web pages
-$router->get('/', [CertificateController::class, 'index']);        // product listing
+$router->get('/', [CertificateController::class, 'index']);        // product listings
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/register', [AuthController::class, 'showRegister']);
@@ -41,18 +37,15 @@ $router->post('/webhook/shopify', [CheckoutController::class, 'webhook']);
 // Product listing
 $router->get('/products', [ProductController::class, 'index']);
 
+// Edit Certificate
+$router->get('/editor/{id}', [CertificateController::class, 'show']);
+
 // Cart
 $router->post('/cart/add', [CartController::class, 'add']);
 $router->get('/cart', [CartController::class, 'index']);
 
 // Checkout (already exists from Phase 4, but now triggered from cart)
 $router->post('/checkout', [CheckoutController::class, 'startCheckout']);
-
-// Minimal API test endpoint (for React editor later)
-$router->get('/api/ping', function () {
-    header('Content-Type: application/json');
-    echo json_encode(['message' => 'API is working']);
-});
 
 // Dispatch
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

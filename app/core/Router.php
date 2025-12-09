@@ -22,20 +22,33 @@
         public function dispatch(string $method, string $uri)
         {
             $path = parse_url($uri, PHP_URL_PATH);
-            $handler = $this->routes[$method][$path] ?? null;
 
-            if (!$handler) {
-                http_response_code(404);
-                echo "404 Not Found";
-                return;
+            // Try exact match first
+            if (isset($this->routes[$method][$path])) {
+                $handler = $this->routes[$method][$path];
+                return $this->invokeHandler($handler);
             }
 
+            // Try dynamic routes
+            foreach ($this->routes[$method] as $route => $handler) {
+                $pattern = preg_replace('#\{[^/]+\}#', '([^/]+)', $route);
+                if (preg_match('#^' . $pattern . '$#', $path, $matches)) {
+                    array_shift($matches); // remove full match
+                    return $this->invokeHandler($handler, $matches);
+                }
+            }
+
+            http_response_code(404);
+            echo "404 Not Found";
+        }
+
+        private function invokeHandler($handler, array $params = [])
+        {
             if (is_array($handler)) {
                 [$class, $method] = $handler;
                 $instance = new $class();
-                return $instance->$method();
+                return $instance->$method(...$params);
             }
-
-            return $handler();
+            return $handler(...$params);
         }
     }

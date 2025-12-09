@@ -11,5 +11,7 @@
             "email": "91637528+Dikewonsi@users.noreply.github.com"
         }
     ],
-    "require": {}
+    "require": {
+        "tecnickcom/tcpdf": "^6.10"
+    }
 }
