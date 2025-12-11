@@ -62,6 +62,8 @@
             }
 
             $_SESSION['user_id'] = $user->id;
+            $_SESSION['user_role'] = $user->role;
+            
             header("Location: /");
         }
 

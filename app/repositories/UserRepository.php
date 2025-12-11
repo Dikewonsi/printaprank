@@ -15,6 +15,27 @@ class UserRepository
         $this->db = Database::connection();
     }
 
+    public function findAll(): array
+    {
+        // 1. Define the SQL query
+        $sql = "SELECT id, name, email, role, created_at FROM users"; 
+
+        // 2. Prepare and execute the statement
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        
+        // 3. Fetch all results as associative arrays or objects
+        $results = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $users = [];
+        // 4. Map the raw database results to User Model objects
+        foreach ($results as $data) {
+            $users[] = new User($data);
+        }
+
+        return $users;
+    }
+
     public function findByEmail(string $email): ?User
     {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");

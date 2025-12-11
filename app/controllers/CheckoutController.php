@@ -4,6 +4,7 @@
     use App\services\ShopifyService;
     use App\repositories\UserRepository;
     use App\repositories\TransactionRepository;
+    use App\repositories\CertificateOrderRepository;
 
     class CheckoutController
     {
@@ -23,22 +24,35 @@
          */
         public function startCheckout()
         {
-            $planId = $_POST['plan_id'] ?? null;
-            if (!$planId) {
-                echo "No plan selected.";
+            $cart = $_SESSION['cart'] ?? [];
+            if (empty($cart)) {
+                echo "Cart is empty.";
                 return;
             }
 
-            // Example line item
-            $lineItems = [
-                [
-                    'variant_id' => $planId,
-                    'quantity'   => 1
-                ]
-            ];
+            $lineItems = [];
+            foreach ($cart as $item) {
+                // Fetch certificate from DB to get Shopify variant_id
+                $certificate = \App\models\Certificate::find($item['product_id']);
+                if ($certificate && !empty($certificate['shopify_variant_id'])) {
+                    $lineItems[] = [
+                        'variant_id' => $certificate['shopify_variant_id'],
+                        'quantity'   => 1,
+                        'properties' => [
+                        'Awardee Name' => $item['awardee_name']
+            ]
+                    ];
+                }
+            }
+
+            if (empty($lineItems)) {
+                echo "No valid items in cart.";
+                return;
+            }
 
             $checkoutUrl = $this->shopify->createCheckout($lineItems);
             header("Location: {$checkoutUrl}");
+            exit;
         }
 
         /**
@@ -47,39 +61,54 @@
         public function webhook()
         {
             $data = file_get_contents('php://input');
+            if (PHP_SAPI === 'cli' && isset($GLOBALS['TEST_WEBHOOK_DATA'])) {
+                $data = $GLOBALS['TEST_WEBHOOK_DATA'];
+            }
 
-        // Allow CLI testing
-        if (PHP_SAPI === 'cli' && isset($GLOBALS['TEST_WEBHOOK_DATA'])) {
-            $data = $GLOBALS['TEST_WEBHOOK_DATA'];
-        }
-
-        $hmacHeader = $_SERVER['HTTP_X_SHOPIFY_HMAC_SHA256'] ?? '';
-
-        if (!$this->shopify->verifyWebhook($data, $hmacHeader)) {
-            echo "Invalid signature";
-            return;
-        }
+            $hmacHeader = $_SERVER['HTTP_X_SHOPIFY_HMAC_SHA256'] ?? '';
+            if (!$this->shopify->verifyWebhook($data, $hmacHeader)) {
+                echo "Invalid signature";
+                return;
+            }
 
             $payload = json_decode($data, true);
 
-            $userId = $payload['customer']['id'] ?? null;
-            $planId = $payload['line_items'][0]['variant_id'] ?? null;
-            $amount = $payload['total_price'] ?? 0;
+            $orderId = $payload['id'] ?? null;
+            $status  = $payload['financial_status'] ?? 'pending';
+            $amount  = $payload['total_price'] ?? 0;
+            $customer = $payload['customer'] ?? [];
 
-            if ($userId && $planId) {
-                // Update user membership
-                $this->users->updateMembership($userId, $planId);
+            // Save transaction
+            $this->transactions->create([
+                'user_id'         => $customer['id'] ?? null,
+                'shopify_order_id'=> $orderId,
+                'status'          => $status,
+                'amount'          => $amount,
+            ]);
 
-                // Store transaction
-                $this->transactions->create([
-                    'user_id' => $userId,
-                    'shopify_order_id' => $payload['id'],
-                    'status' => $payload['financial_status'],
-                    'amount' => $amount,
-                ]);
+            // Save certificate orders
+            $certificateOrders = new \App\repositories\CertificateOrderRepository();
+
+            foreach ($payload['line_items'] as $lineItem) {
+                $variantId = $lineItem['variant_id'];
+                $certificate = \App\models\Certificate::findByVariant($variantId);
+
+                if ($certificate) {
+                    // Awardee name can be passed as cart metadata or session
+                    $awardeeName = $_SESSION['cart'][0]['awardee_name'] ?? 'Unknown';
+
+                    $certificateOrders->create([
+                        'order_id'      => $orderId,
+                        'certificate_id'=> $certificate['id'],
+                        'awardee_name'  => $awardeeName,
+                        'status'        => $status,
+                    ]);
+                }
             }
 
             http_response_code(200);
             echo "Webhook processed";
         }
+
+
     }

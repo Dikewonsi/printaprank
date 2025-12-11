@@ -46,9 +46,26 @@
         {
             if (is_array($handler)) {
                 [$class, $method] = $handler;
-                $instance = new $class();
+                $instance = null;
+
+                // --- CRITICAL ADMIN ACCESS CONTROL FIX ---
+                $adminControllerClass = 'App\\controllers\\AdminController';
+
+                if ($class === $adminControllerClass) {
+                    // If it's the AdminController, pass the method name 
+                    // to the constructor for the bypass check.
+                    $instance = new $class($method); 
+                } else {
+                    // Instantiate all other controllers normally.
+                    $instance = new $class();
+                }
+                // -----------------------------------------
+                
+                // Execute the controller method
                 return $instance->$method(...$params);
             }
+            
+            // Handle closure/callable functions
             return $handler(...$params);
         }
     }
