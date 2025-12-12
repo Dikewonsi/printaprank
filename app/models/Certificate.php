@@ -2,7 +2,7 @@
     // app/models/Certificate.php
     namespace App\models;
 
-    use App\core\Database; // assuming you already have a Database class for PDO connection
+    use App\core\Database; // 
 
     class Certificate
     {
@@ -11,48 +11,49 @@
         public ?string $title;
         public ?float $price; // Use float or string depending on your DB
         public ?string $description;
-        public ?string $image_path; // Example of another likely column
+        public ?string $image; // Example of another likely column
         
         // Define other necessary properties here (e.g., created_at)
 
         public function __construct(array $data)
         {
-            // 2. Assign the array data to the object properties
-            $this->id = $data['id'] ?? null;
-            $this->title = $data['title'] ?? null;
-            $this->price = $data['price'] ?? null;
+            $this->id          = isset($data['id']) ? (int)$data['id'] : null;
+            $this->title       = $data['title'] ?? null;
+            $this->price       = isset($data['price']) ? (float)$data['price'] : null;
             $this->description = $data['description'] ?? null;
-            $this->image_path = $data['image_path'] ?? null;
-            
-            // Use property promotion if your PHP version supports it (PHP 8.0+)
-            // Otherwise, use the explicit assignment above.
+            $this->image  = $data['image'] ?? null;
         }
         // Fetch all certificates
         public static function all(): array
         {
             $pdo = Database::connection();
             $stmt = $pdo->query("SELECT * FROM certificates");
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Map each row to a Certificate object
+            return array_map(fn($row) => new Certificate($row), $rows);
         }
 
         // Fetch a single certificate by ID
-        public static function find(int $id): ?array
+        public static function find(int $id): ?Certificate
         {
             $pdo = Database::connection();
             $stmt = $pdo->prepare("SELECT * FROM certificates WHERE id = ?");
             $stmt->execute([$id]);
-            $certificate = $stmt->fetch(\PDO::FETCH_ASSOC);
-            return $certificate ?: null;
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            return $row ? new Certificate($row) : null;
         }
 
-        // Fetch a single certificate by Shopify variant ID
-        public static function findByVariant(int $variantId): ?array
+        public static function findByVariant(int $variantId): ?Certificate
         {
             $pdo = Database::connection();
             $stmt = $pdo->prepare("SELECT * FROM certificates WHERE shopify_variant_id = ?");
             $stmt->execute([$variantId]);
-            $certificate = $stmt->fetch(\PDO::FETCH_ASSOC);
-            return $certificate ?: null;
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            return $row ? new Certificate($row) : null;
         }
+
 
     }

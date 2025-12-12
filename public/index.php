@@ -15,6 +15,7 @@ use App\controllers\CheckoutController;
 use App\controllers\ProductController;
 use App\controllers\CartController;
 use App\controllers\AdminController;
+use App\controllers\MembershipController;
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -26,14 +27,20 @@ Env::load(__DIR__ . '/../.env.php');
 $router = new Router();
 
 // Web pages
-$router->get('/', [CertificateController::class, 'index']);        // product listings
+$router->get('/', [CertificateController::class, 'index']);
+$router->get('/certificates', [CertificateController::class, 'index']);
 $router->get('/login', [AuthController::class, 'showLogin']);
+$router->get('/logout', [AuthController::class, 'logout']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/register', [AuthController::class, 'showRegister']);
 $router->post('/register', [AuthController::class, 'register']);
 $router->get('/dashboard', [DashboardController::class, 'index']);
-$router->post('/checkout', [CheckoutController::class, 'startCheckout']);
-$router->post('/webhook/shopify', [CheckoutController::class, 'webhook']);
+
+
+// Checkout simulation routes
+$router->get('/checkout', [CheckoutController::class, 'showCheckout']);
+$router->post('/checkout/process', [CheckoutController::class, 'process']);
+$router->get('/checkout/success', [CheckoutController::class, 'success']);
 
 // Product listing
 $router->get('/products', [ProductController::class, 'index']);
@@ -44,9 +51,14 @@ $router->get('/editor/{id}', [CertificateController::class, 'show']);
 // Cart
 $router->post('/cart/add', [CartController::class, 'add']);
 $router->get('/cart', [CartController::class, 'index']);
+$router->post('/cart/remove', [CartController::class, 'remove']);
 
-// Checkout (already exists from Phase 4, but now triggered from cart)
-$router->post('/checkout', [CheckoutController::class, 'startCheckout']);
+// Memberships
+$router->get('/memberships', [MembershipController::class, 'index']);
+
+// Certificate download
+$router->get('/certificates/download', [CertificateController::class, 'download']);
+
 
 
 // --- ADMIN ROUTES (NEW SECTION) ---
@@ -75,7 +87,6 @@ $router->get('/admin/memberships', [AdminController::class, 'viewMemberships']);
 
 // View All Orders/Transactions (Protected Route)
 $router->get('/admin/orders', [AdminController::class, 'viewOrders']);
-
 
 // Dispatch
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

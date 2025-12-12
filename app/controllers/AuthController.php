@@ -56,6 +56,8 @@
             $pass  = $_POST['password'] ?? '';
 
             $user = $this->users->findByEmail($email);
+
+            // Validate user
             if (!$user || !password_verify($pass, $user->password)) {
                 echo "Invalid credentials!";
                 return;
@@ -63,12 +65,20 @@
 
             $_SESSION['user_id'] = $user->id;
             $_SESSION['user_role'] = $user->role;
+
+            $_SESSION['user'] = [
+                'id'   => $user->id,
+                'name' => $user->name,
+                'email'=> $user->email,
+                'membership_id' => $user->membership_id,
+            ];
             
             header("Location: /");
         }
 
         public function logout()
         {
+            unset($_SESSION['user']);
             session_destroy();
             header("Location: /login");
         }

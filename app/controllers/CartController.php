@@ -17,10 +17,18 @@ class CartController
         $productId   = $_POST['product_id'] ?? null;
         $awardeeName = $_POST['awardee_name'] ?? null;
 
-        if ($productId && $awardeeName) {
+        if (isset($_POST['product_id'])) {
             $_SESSION['cart'][] = [
-                'product_id'   => $productId,
-                'awardee_name' => $awardeeName,
+                'type' => 'certificate',
+                'product_id' => $_POST['product_id'],
+                'awardee_name' => $_POST['awardee_name'] ?? '',
+            ];
+        }
+
+        if (isset($_POST['membership_id'])) {
+            $_SESSION['cart'][] = [
+                'type' => 'membership',
+                'membership_id' => $_POST['membership_id'],
             ];
         }
 
@@ -38,18 +46,50 @@ class CartController
         // Fetch product details for each cart item
         $cartWithDetails = [];
         foreach ($cart as $item) {
-            $product = Certificate::find($item['product_id']);
-            if ($product) {
-                $cartWithDetails[] = [
-                    'id'           => $product['id'],
-                    'title'        => $product['title'],
-                    'description'  => $product['description'],
-                    'price'        => $product['price'],
-                    'image'        => $product['image'],
-                    'awardee_name' => $item['awardee_name'],
-                ];
+            $type = $item['type'] ?? null;
+
+            if ($type === 'certificate') {
+                $certificate = \App\models\Certificate::find((int)$item['product_id']);
+                if ($certificate) {
+                    $cartWithDetails[] = [
+                        'type'         => 'certificate',
+                        'title'        => $certificate->title,
+                        'description'  => $certificate->description,
+                        'image'        => $certificate->image,
+                        'price'        => $certificate->price,
+                        'awardee_name' => $item['awardee_name'] ?? '',
+                    ];
+                }
+            } elseif ($type === 'membership') {
+                $membership = \App\models\Membership::find((int)$item['membership_id']);
+                if ($membership) {
+                    $cartWithDetails[] = [
+                        'type'        => 'membership',
+                        'title'       => $membership->name,
+                        'description' => $membership->description,
+                        'price'       => $membership->price,
+                        'download_limit' => $membership->download_limit,
+                        'priority_support' => $membership->priority_support,
+                    ];
+                }
             }
         }
+
         include __DIR__ . '/../../views/cart/index.php';
     }
+
+    public function remove()
+    {
+        $index = $_POST['index'] ?? null;
+
+        if ($index !== null && isset($_SESSION['cart'][$index])) {
+            unset($_SESSION['cart'][$index]);
+            // Reindex the array so keys are sequential again
+            $_SESSION['cart'] = array_values($_SESSION['cart']);
+        }
+
+        header("Location: /cart");
+        exit;
+    }
+
 }
